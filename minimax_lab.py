@@ -55,6 +55,43 @@ def obtener_movimientos_posibles(tablero, posicion):
 
     return movimientos_validos
 
+
+def evaluar_estado(pos_gato, pos_raton):
+    fila_gato, col_gato = pos_gato
+    fila_raton, col_raton = pos_raton
+
+    distancia = abs(fila_gato - fila_raton) + abs(col_gato - col_raton)
+
+    return distancia 
+
+def minimax(tablero, pos_gato, pos_raton, profundidad, es_turno_maximizador):
+    #tablero: El estado actual del juego.
+    #- pos_gato, pos_raton: Coordenadas actuales.
+    #- profundidad: ¿Cuántos turnos hacia el futuro miramos?
+    #- es_turno_maximizador: Booleano. True si es el turno del Ratón (MAX), False si es del Gato (MIN).
+
+    if profundidad == 0 or pos_gato == pos_raton:
+        return evaluar_estado(pos_gato, pos_raton)
+    
+    # Caso recursivo
+    if es_turno_maximizador: #Turno del raton MAX
+        mejor_valor = -float('inf') #Peor valor posible
+
+        movimientos_posibles = obtener_movimientos_posibles(tablero, pos_raton)
+
+        for nueva_pos_raton in movimientos_posibles:
+            valor = minimax(tablero, pos_gato, nueva_pos_raton, profundidad - 1, False)
+            mejor_valor = max(mejor_valor, valor)
+        return mejor_valor
+    else:#Turno del gato
+        peor_valor = float('inf') #Mejor valor posible
+
+        movimientos_posibles = obtener_movimientos_posibles(tablero, pos_gato)
+
+        for nueva_pos_gato in movimientos_posibles:
+            valor = minimax(tablero, nueva_pos_gato, pos_raton, profundidad - 1, True)
+            peor_valor = min(peor_valor, valor)
+        return peor_valor
 # -------------------------------------------------------------------------------
 # COMO SE EJECUTA EL JUEGO
 
