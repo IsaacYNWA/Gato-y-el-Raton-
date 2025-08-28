@@ -2,10 +2,12 @@ import random # Para poder elegir movimientos al azar
 import copy 
 
 
-#Varibles constantes 
+#Varibles constantes
 GATO = 'G'
 RATON = 'R'
-VACIO = ''
+VACIO = ' '
+
+#--------------------------------------------------------
 
 def crear_tablero(ancho, alto):
     tablero = []
@@ -92,19 +94,58 @@ def minimax(tablero, pos_gato, pos_raton, profundidad, es_turno_maximizador):
             valor = minimax(tablero, nueva_pos_gato, pos_raton, profundidad - 1, True)
             peor_valor = min(peor_valor, valor)
         return peor_valor
+    
+def encontrar_mejor_movimiento_raton(tablero, pos_gato, pos_raton, profundidad):
+    #Esta funcion utiliza minimac para analizar cada movimiento posible
+
+    mejor_valor = -float('inf')
+    mejor_movimiento = pos_raton #Se queda quieto si es que no hay donde moverse
+
+    movimientos_posibles = obtener_movimientos_posibles(tablero, pos_raton)
+
+    for movimiento in movimientos_posibles:
+        valor = minimax(tablero, pos_gato, movimiento, profundidad - 1, False)
+
+        if valor > mejor_valor:
+            mejor_valor = valor
+            mejor_movimiento = movimiento
+
+    return mejor_movimiento
+
+def encontrar_mejor_movimiento_gato(tablero, pos_gato, pos_raton, profundidad):
+    #En este caso es minimizar la puntuacion
+
+    peor_valor = float('inf') #Empezar con el valor mas alto posible
+    mejor_movimiento = pos_gato
+
+    #Movimientos que el gato puede hacer
+    movimientos_posibles = obtener_movimientos_posibles(tablero, pos_gato)
+
+    for movimiento in movimientos_posibles:
+        valor = minimax(tablero, movimiento, pos_raton, profundidad - 1, True)
+
+        if valor < peor_valor:
+            peor_valor = valor
+            mejor_movimiento = movimiento
+    return mejor_movimiento
 # -------------------------------------------------------------------------------
 # COMO SE EJECUTA EL JUEGO
 
-ANCHO_TABLERO = 8
-ALTO_TABLERO = 8
+#Configuracion del juego
+ANCHO_TABLERO = 5
+ALTO_TABLERO = 5
 
 #El gato empieza en la esquina superior izquierda 
 posicion_inicial_gato = (0, 0)
 
 #El raton empieza en la esquina inferior derecha
-posicion_inicial_raton = (7, 7)
+posicion_inicial_raton = (1, 1)
 
-NUMERO_DE_TURNOS = 5 #Duracion de la simulacion por turnos
+NUMERO_DE_TURNOS = 15 #Duracion de la simulacion por turnos
+
+PROFUNDIDAD_IA = 3 #Profundidad de busqueda de Minimax
+
+#---------------------------------------------------------------------------------
 
 #EJECUCION DE LOGICA
 print("¡Bienvenido al laberinto del Gato y el Raton!")
@@ -119,30 +160,60 @@ colocar_personajes(mi_tablero, posicion_inicial_gato, posicion_inicial_raton)
 print("--- Turno 0: Estado Inicial ---")
 imprimir_tablero(mi_tablero)
 
-#Bucle principal del juego
+#----------------------------------------------------------------------------------
+#BUCLE PRINCIPAL DEL JUEGO
 
 for turno in range(1, NUMERO_DE_TURNOS + 1):
     print(f"\n--- Turno {turno} ---")
 
-    #MUEVE EL RATON
-    movimientos_raton = obtener_movimientos_posibles(mi_tablero, posicion_actual_raton)
+    #TURNO DEL RATON
+    nueva_posicion_raton = encontrar_mejor_movimiento_raton(
+        mi_tablero,
+        posicion_actual_gato,
+        posicion_actual_raton,
+        PROFUNDIDAD_IA
+    )
 
-    if movimientos_raton: #SI la lista de movimientos esta vacia
-        #Se elige movimiento valido al azar 
-        nueva_posicion_raton = random.choice(movimientos_raton)
-
-        #Se actualiza el tablero y se borra la vieja ubicacion del raton
-        fila_vieja, col_vieja = posicion_actual_raton
-        mi_tablero[fila_vieja][col_vieja] = VACIO
-
-        #Se le coloca a su nueva ubicacion
-        fila_nueva, col_nueva = nueva_posicion_raton
-        mi_tablero[fila_nueva][col_nueva] = RATON
-
+    if nueva_posicion_raton != posicion_actual_raton:
+        mi_tablero[posicion_actual_raton[0]][posicion_actual_raton[1]] = VACIO
+        mi_tablero[nueva_posicion_raton[0]][nueva_posicion_raton[1]] = RATON
         posicion_actual_raton = nueva_posicion_raton
-        print(f"El ratón se mueve a {posicion_actual_raton}")
-    else: 
-        print("El ratón no tiene dónde moverse. ¡Está atrapado!")
-    
+        print(f"El Ratón huye a {posicion_actual_raton}")
+    else:
+        print("El Ratón decide no moverse o está atrapado.")
+
+    if posicion_actual_gato == posicion_actual_raton:
+        imprimir_tablero(mi_tablero)
+        print("\n¡El Ratón cometió un error y fue atrapado!")
+        break
     imprimir_tablero(mi_tablero)
+
+    #TURNO DEL GATO
+
+    print("El Gato esta pensando...")
+    nueva_posicion_gato = encontrar_mejor_movimiento_gato(
+        mi_tablero,
+        posicion_actual_gato,
+        posicion_actual_raton,
+        PROFUNDIDAD_IA
+    )
+
+    if nueva_posicion_gato != posicion_actual_gato:
+        mi_tablero[posicion_actual_gato[0]][posicion_actual_gato[1]] = VACIO
+        mi_tablero[nueva_posicion_gato[0]][nueva_posicion_gato[1]] = GATO
+        posicion_actual_gato = nueva_posicion_gato
+        print(f'El Gato persigue a {posicion_actual_gato}')
+    else:
+        print("El Gato decide no moverse.")
+
+    #Si el gato gana dp de su movimiento
+    if posicion_actual_gato == posicion_actual_raton:
+        imprimir_tablero(mi_tablero)
+        print("\n¡El Gato ha atrapado al Ratón!")
+        break
+
+    imprimir_tablero(mi_tablero)
+
+else:
+    print(f"\n¡El tiempo se acabó! El Ratón ha escapado después de {NUMERO_DE_TURNOS} turnos.") 
 
